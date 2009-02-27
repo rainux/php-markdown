@@ -1067,7 +1067,11 @@ class Markdown_Parser {
 	#
 		$text = preg_replace_callback('{
 				(?:\n\n|\A\n?)
-				(	            # $1 = the code block -- one or more lines, starting with a space/tab
+				(?>
+					[ ]{'.$this->tab_width.'}  # Lines must start with a tab or a tab-width of spaces
+					[#]!(\S+)\s*\n+  # $1 = the language of the code block, use with Google Syntax Highlighter for WordPress
+				)?
+				(	            # $2 = the code block -- one or more lines, starting with a space/tab
 				  (?>
 					[ ]{'.$this->tab_width.'}  # Lines must start with a tab or a tab-width of spaces
 					.*\n+
@@ -1080,7 +1084,8 @@ class Markdown_Parser {
 		return $text;
 	}
 	function _doCodeBlocks_callback($matches) {
-		$codeblock = $matches[1];
+		$code_lang = $matches[1];
+		$codeblock = $matches[2];
 
 		$codeblock = $this->outdent($codeblock);
 		$codeblock = htmlspecialchars($codeblock, ENT_NOQUOTES);
@@ -1088,7 +1093,11 @@ class Markdown_Parser {
 		# trim leading newlines and trailing newlines
 		$codeblock = preg_replace('/\A\n+|\n+\z/', '', $codeblock);
 
-		$codeblock = "<pre><code>$codeblock\n</code></pre>";
+		if ($code_lang) {
+			$codeblock = "<pre name=\"code\" class=\"$code_lang\">$codeblock\n</pre>";
+		} else {
+			$codeblock = "<pre><code>$codeblock\n</code></pre>";
+		}
 		return "\n\n".$this->hashBlock($codeblock)."\n\n";
 	}
 
